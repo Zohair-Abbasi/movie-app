@@ -3,22 +3,41 @@ import SearchBar from '@/components/SearchBar';
 import { icons } from '@/constants/icons';
 import { images } from '@/constants/images';
 import { fetchMovies } from '@/services/api';
+import { updateSearchCount } from '@/services/appwrite';
 import useFetch from '@/services/useFetch';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Text, View } from 'react-native';
 
-const search = () => {
-    const router = useRouter();
-
+const Search = () => {
+    const [searchQuery, setSearchQuery] = useState('');
     const {
         data: movies,
         loading,
-        error
+        error,
+        refetch: loadMovies,
+        reset
     } = useFetch(() => fetchMovies({
-        query: ''
+        query: searchQuery
 
-    }))
+    }), false)       // false i sliye k auto fetchg false ho jaaye taa k hamara user khud fetch kry manuallyt by typing a search query
+
+
+    useEffect(() => {
+        const timeoutId = setTimeout(async () => {
+            if (searchQuery.trim()) {
+                await loadMovies();
+            } else {
+                reset();
+            }
+        }, 500); // 50 milliseconds debounce time
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (movies?.length > 0 && movies?.[0]) {
+            updateSearchCount(searchQuery, movies[0]); // track the searches made by users if there are movies found then pass the first movie as well
+        }
+    }, [movies]);
     return (
         <View className='flex-1 bg-primary'>
             <Image
@@ -41,11 +60,14 @@ const search = () => {
                 }}
                 ListHeaderComponent={
                     <>
-                        <View className='w-full flex-row justify-center items-center mt-20'>
-                            <Image source={icons.logo} />
+                        <View className='w-full flex-row justify-center mt-20 items-center'>
+                            <Image source={icons.logo} className='w-12 h-10' />
                         </View>
-                        <View className="my-10 ">
-                            <SearchBar placeholder='search for movie' />
+                        <View className="my-5">
+                            <SearchBar
+                                placeholder='search for movie'
+                                value={searchQuery}
+                                onChangeText={(text: string) => setSearchQuery(text)} />
                         </View>
                         {loading && (
                             <ActivityIndicator
@@ -60,18 +82,27 @@ const search = () => {
                             </Text>
                         )}
 
-                        {!loading && !error && 'SEARCH TERM'.trim() && movies?.length > 0 && (
+                        {!loading && !error && searchQuery.trim() && movies?.length > 0 && (
                             <Text className='text-xl text-white font-bold'>
                                 Search Results for{' '}
-                                <Text className='text-accent'>Search Term</Text>
+                                <Text className='text-accent'>{searchQuery}</Text>
                             </Text>
                         )}
 
                     </>
+                }
+                ListEmptyComponent={
+                    !loading && !error ? (
+                        <View>
+                            <Text className='text-white text-center mt-10'>
+                                {searchQuery.trim() ? `No movies found. for ${searchQuery}` : 'Start typing to search for movies.'}
+                            </Text>
+                        </View>
+                    ) : null
                 }
             />
         </View>
     )
 }
 
-export default search
+export default Search
