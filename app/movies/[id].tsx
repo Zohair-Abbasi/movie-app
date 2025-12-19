@@ -72,7 +72,7 @@ const MovieDetails = () => {
                     <MovieInfo label='Genres' value={movie?.genres?.map((genre) => genre.name).join(', ')} />
                     <MovieInfo label='Production Companies' value={movie?.production_companies.map((company) => company.name).join(', ') || 'N/A'} />
                     <MovieInfo label='Budget' value={movie?.budget ? `$${movie.budget / 1000000} Million` : null} />
-                    <MovieInfo label='Revenue' value={movie?.revenue ? `$${movie.revenue.toLocaleString()}` : null} />
+                    <MovieInfo label='Revenue' value={movie?.revenue ? `$${movie.revenue / 1000000} Million` : null} />
                 </View>
             </ScrollView>
             <TouchableOpacity
